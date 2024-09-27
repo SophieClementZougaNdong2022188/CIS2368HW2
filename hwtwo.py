@@ -84,11 +84,12 @@ householditemslist = [
 # if __name__ == '__main__':
 #     app.run(debug = True)
     
-    
+#fetch all household items
 @app.route('/api/householditems/all', methods = ['GET'])
 def allhouseholditems():
     return jsonify(householditemslist)
 
+#fetch a single household item
 @app.route('/api/householditems/single', methods=['GET'])
 def singlehouseholditem():
     # request.args consists of parameter arguments passed in request. 
@@ -101,28 +102,35 @@ def singlehouseholditem():
     for item in householditemslist:
         if item['ID']==ID:
             return(item)
-        
-@app.route('/householditems/update', methods=['POST']) #do I put api at the beginning of the address or no?
+
+#insert a new household item        
+@app.route('/api/householditems/insert', methods=['POST']) #do I put api at the beginning of the address or no?
 def updatehouseholditems():
     userinput = request.get_json()
     if not userinput:
         return "Invalid input", 400
 
-    newid = userinput.get('ID')
-    newname = userinput.get('NAME')
-    newcategory = userinput.get('CATEGORY')
-    newquantity = userinput.get('QUANTITY')
-    newstatus = userinput.get('STATUS')
+    newid = userinput['ID']
+    newname = userinput['NAME']
+    newcategory = userinput['CATEGORY']
+    newquantity = userinput['QUANTITY']
+    newstatus = userinput['STATUS']
 
-    if not newid or not newname or not newcategory or not newquantity or not newstatus:
-        return "Missing required fields", 400
+mycreds = creds.myCreds()
+mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
 
-    # Adding the new student to the list
-    studentlist.append({'ID': newid, 'NAME': newname, 'CATEGORY': newcategory, 'QUANTITY': newquantity, 'STATUS': newstatus})
-    print("A new household item has been inserted")
-    return "A new household item is added", 201
+if not mycon:
+    return "Database connection failed", 404
+sql = "INSERT INTO householditems(ID, NAME, CATEGORY, QUANTITY, STATUS) VALUES ('%s', '%s', '%s', '%s', '%s')" % (newid, newname, newcategory, newquantity, newstatus)
 
-@app.route('/householditems/all', methods=['GET'])
+execute_update_query(mycon,sql)
+    # if not newid or not newname or not newcategory or not newquantity or not newstatus:
+    #     return "Missing required fields", 400
+
+    # print("A new household item has been inserted")
+    # return "A new household item is added", 201
+
+@app.route('/api/householditems/all', methods=['GET'])
 def allhouseholditems():
     mycreds = creds.myCreds()
     mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
@@ -134,7 +142,8 @@ def allhouseholditems():
     # Convert rows to a JSON-friendly format
     users = [{"ID": row[0], "NAME": row[1], "CATEGORY": row[2], "QUANTITY": row[3], "STATUS": row[4]} for user in userrows]
     return jsonify(users)
-@app.route('/householditems/single', methods=['GET'])
+
+@app.route('/api/householditems/single', methods=['GET'])
 def singleuser():
     # request.args consists of parameter arguments passed in request. 
     # Below code retriving parameter 'id' from request arguments 
@@ -145,7 +154,7 @@ def singleuser():
     
     mycreds = creds.myCreds()
     mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
-    sql = "select * from users"
+    sql = "select * from householditems"
     userrows = execute_read_query(mycon, sql)
     results = []
 
@@ -154,8 +163,9 @@ def singleuser():
             results.append(item)
     return jsonify(results)
 
-@app.route('/householditems/insertnewitem', methods=['POST'])
-def insertnewuser():
+#insert a new household item
+@app.route('/api/householditems/insert', methods=['POST'])
+def insertnewitem():
     userinput = request.get_json() # Pass new user info in JSON format within Body of the request
     newid = userinput['ID']
     newname = userinput['NAME']
@@ -166,29 +176,27 @@ def insertnewuser():
 
     mycreds = creds.myCreds()
     mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
-    sql = "insert into users(newid, newname, newcategory, newquantity, newstatus) values ('%s','%s','%s','%s','%s')" % (newid, newname, newcategory, newquantity, newstatus)
+    sql = "insert into users(ID, NAME, CATEGORY, QUANTITY, STATUS) values ('%s','%s','%s','%s','%s')" % (newid, newname, newcategory, newquantity, newstatus)
 
     execute_update_query(mycon, sql)
     return 'Add user request successful!'
 
-@app.route('/householditems/delete', methods=['DELETE'])
-#how to delete by ID
-#@app.route('/delete_householditems/<int:item_id>', methods=['DELETE'])
-@app.route('/householditems/deleteuser', methods=['DELETE'])
+#delete household items by id
+@app.route('/api/householditems/delete', methods=['DELETE'])
 def api_delete_user_byID():
     userinput = request.get_json() # Pass user ID in JSON format within Body of the request
-    idtodelete = userinput['id']
+    idtodelete = userinput['ID']
     
     mycreds = creds.myCreds()
     mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
-    sql = "delete from users where id = %s" % (idtodelete)
+    sql = "DELETE FROM householditems where id = %s" % (idtodelete)
     execute_update_query(mycon, sql)
         
     return "Delete request successful!"
 
 # Update user information using request PUT method
-@app.route('/users/updatehouseholditems', methods=['PUT'])
-def updatehouseholditems():
+@app.route('/api/householditems/update', methods=['PUT'])
+def updatehouseholditemsput():
     userinput = request.get_json() # Pass user ID and email in JSON format within Body of the request
     newid = userinput['ID']
     newname = userinput['NAME']
@@ -201,7 +209,7 @@ def updatehouseholditems():
     execute_update_query(mycon, sql)
     return 'User update successful!'
 
-DBconnection("cis2368database.cqznz0sza3gn.us-east-1.rds.amazonaws.com","admin","password","cis2368database")
+#DBconnection("cis2368database.cqznz0sza3gn.us-east-1.rds.amazonaws.com","admin","password","cis2368database")
 #try changing database name to cis2368db1
 app.run()
 #print DBconnection 
