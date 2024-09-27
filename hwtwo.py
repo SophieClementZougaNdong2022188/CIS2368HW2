@@ -120,7 +120,7 @@ mycreds = creds.myCreds()
 mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
 
 if not mycon:
-    return "Database connection failed", 404
+    "Database connection failed", 404
 sql = "INSERT INTO householditems(ID, NAME, CATEGORY, QUANTITY, STATUS) VALUES ('%s', '%s', '%s', '%s', '%s')" % (newid, newname, newcategory, newquantity, newstatus)
 
 execute_update_query(mycon,sql)
